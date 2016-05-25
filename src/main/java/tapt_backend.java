@@ -32,13 +32,25 @@ public class tapt_backend {
         String databaseUrl = System.getenv("HEROKU_POSTGRESQL_AQUA_URL");
         if (databaseUrl == null) {
             databaseUrl = "postgresql://localhost/tapt_api";
+        } else {
+            databaseUrl = databaseUrl.replaceAll("postgres", "postgresql");
         }
-        cpds.setJdbcUrl("jdbc:" + databaseUrl);
-        port(8100);
+        System.out.println(databaseUrl);
+        cpds.setJdbcUrl("jdbc:postgresql://ec2-23-23-199-72.compute-1.amazonaws.com:5432/dcp0qcse5pokul?user=yuvzyisevdvoan&password=SYJCWMboRrPG_BXM5Uu3GWeyHI&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+        port(getHerokuAssignedPort());
         enableCORS("*", "*", "*");
         post("/users", users);
         get("/", home);
         get("/beertypes", beertypes);
+        get("/beertypes/:id", beertypesId);
+    }
+
+    static int getHerokuAssignedPort() {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        if (processBuilder.environment().get("PORT") != null) {
+            return Integer.parseInt(processBuilder.environment().get("PORT"));
+        }
+        return 4567; //return default port if heroku-port isn't set (i.e. on localhost)
     }
 
     private static void enableCORS(final String origin, final String methods, final String headers) {
@@ -99,7 +111,35 @@ public class tapt_backend {
     private static Route users = new Route() {
         public Object handle(Request request, Response response) throws Exception {
             System.out.println(request.body());
+            Connection connection = cpds.getConnection();
+            String query = "INSERT INTO users";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
             return "This is your stuff";
+        }
+    };
+
+    private static Route beertypesId = new Route() {
+        public Object handle(Request request, Response response) throws Exception {
+            Connection connection = cpds.getConnection();
+            String query = "SELECT * FROM beertypes WHERE id = " + request.params("id");
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            ResultSetMetaData rsmd = resultSet.getMetaData();
+            JSONObject oneBeer = new JSONObject();
+            if (resultSet.next()) {
+                for(int i = 1; i <= rsmd.getColumnCount(); i++) {
+                    oneBeer.put(rsmd.getColumnName(i), resultSet.getString(i));
+                }
+                return oneBeer;
+            } else {
+                oneBeer.put("Nothing", "Found");
+            }
+            resultSet.close();
+            preparedStatement.close();
+            connection.close();
+            return oneBeer;
         }
     };
 }
