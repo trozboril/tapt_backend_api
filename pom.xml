@@ -46,9 +46,15 @@
             <artifactId>json</artifactId>
             <version>20160212</version>
         </dependency>
-
-
     </dependencies>
-
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.heroku.sdk</groupId>
+                <artifactId>heroku-maven-plugin</artifactId>
+                <version>1.0.3</version>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

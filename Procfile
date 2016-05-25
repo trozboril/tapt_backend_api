@@ -1,1 +1,1 @@
-web: sh src/main/java/tapt_backend
+web: java $JAVA_OPTS -cp target/classes:target/dependency/* tapt_backend
