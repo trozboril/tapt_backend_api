@@ -4,8 +4,11 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import spark.Request;
+
+
 import spark.Response;
 import spark.Route;
+import spark.Filter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,10 +30,21 @@ public class tapt_backend {
     public static void main (String [] args) {
         cpds = new ComboPooledDataSource();
         cpds.setJdbcUrl("jdbc:postgresql://localhost/tapt_api");
-        port(8200);
+        port(8100);
+        enableCORS("*", "*", "*");
         post("/users", users);
         get("/", home);
         get("/beertypes", beertypes);
+    }
+
+    private static void enableCORS(final String origin, final String methods, final String headers) {
+        before(new Filter() {
+            public void handle(Request request, Response response) {
+                response.header("Access-Control-Allow-Origin", origin);
+                response.header("Access-Control-Request-Method", methods);
+                response.header("Access-Control-Allow-Headers", headers);
+            }
+        });
     }
 
     private static Route home = new Route() {
