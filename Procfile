@@ -1,1 +1,1 @@
-web: java $JAVA_OPTS -cp src/main/java/tapt_backend
+web: sh src/main/java/tapt_backend

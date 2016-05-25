@@ -29,7 +29,11 @@ public class tapt_backend {
 
     public static void main (String [] args) {
         cpds = new ComboPooledDataSource();
-        cpds.setJdbcUrl("jdbc:postgresql://localhost/tapt_api");
+        String databaseUrl = System.getenv("HEROKU_POSTGRESQL_AQUA_URL");
+        if (databaseUrl == null) {
+            databaseUrl = "postgresql://localhost/tapt_api";
+        }
+        cpds.setJdbcUrl("jdbc:" + databaseUrl);
         port(8100);
         enableCORS("*", "*", "*");
         post("/users", users);
