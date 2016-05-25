@@ -28,6 +28,7 @@ public class tapt_backend {
         cpds = new ComboPooledDataSource();
         cpds.setJdbcUrl("jdbc:postgresql://localhost/tapt_api");
         port(8200);
+        post("/users", users);
         get("/", home);
         get("/beertypes", beertypes);
     }
@@ -76,5 +77,13 @@ public class tapt_backend {
             return beerTypeArray.toString();
         }
     };
+
+    private static Route users = new Route() {
+        public Object handle(Request request, Response response) throws Exception {
+            System.out.println(request.body());
+            return "This is your stuff";
+        }
+    };
 }
+
 
