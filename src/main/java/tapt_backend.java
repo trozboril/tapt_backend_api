@@ -5,6 +5,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import spark.Request;
 
+import org.mindrot.jbcrypt.BCrypt;
 
 import spark.Response;
 import spark.Route;
@@ -110,11 +111,54 @@ public class tapt_backend {
 
     private static Route users = new Route() {
         public Object handle(Request request, Response response) throws Exception {
-            System.out.println(request.body());
+
+            String string = request.body();
+            String[] parts = string.split("&");
+            String bigName = parts[0];
+            String bigEmail = parts[1];
+            String bigPassword = parts[2];
+
+            String name = bigName.replace("name=", "");
+            String email = bigEmail.replace("email=", "");
+            String password = bigPassword.replace("password=", "");
+            password = BCrypt.hashpw(password, BCrypt.gensalt(10));
+
             Connection connection = cpds.getConnection();
-            String query = "INSERT INTO users";
+
+            String query = "SELECT email FROM users WHERE email = ?;";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            return "This is your stuff";
+            preparedStatement.setString(1, email);
+            System.out.println(preparedStatement);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            JSONObject object = new JSONObject();
+
+            if (resultSet.next()) {
+                object.put("status", 409);
+                object.put("message", "User already exists");
+                response.status(409);
+                response.type("application/json");
+            } else {
+                query = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setString(1, name);
+                preparedStatement.setString(2, email);
+                preparedStatement.setString(3, password);
+
+                System.out.println(preparedStatement);
+
+                preparedStatement.execute();
+                object.put("status", 201);
+                object.put("message", "User created");
+//                object.put("token", createJWT(email));
+                response.status(201);
+                response.type("application/json");
+            }
+            resultSet.close();
+            preparedStatement.close();
+            connection.close();
+            return object.toString();
+
         }
     };
 
