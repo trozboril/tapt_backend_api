@@ -32,6 +32,9 @@ public class tapt_backend {
         cpds = new ComboPooledDataSource();
         String databaseUrl = System.getenv("HEROKU_POSTGRESQL_AQUA_URL");
         String herokuAuth = System.getenv("HEROKU_AUTH");
+        if (herokuAuth == null) {
+            herokuAuth = "jdbc:postgresql://localhost/tapt_api";
+        }
         if (databaseUrl == null) {
             databaseUrl = "postgresql://localhost/tapt_api";
         } else {
@@ -40,10 +43,15 @@ public class tapt_backend {
         cpds.setJdbcUrl(herokuAuth);
         port(getHerokuAssignedPort());
         enableCORS("*", "*", "*");
-        post("/users", users);
+        post("/userRegister", usersRegister);
+//        post("/ownerRegister", ownerRegister);
         get("/", home);
         get("/beertypes", beertypes);
         get("/beertypes/:id", beertypesId);
+//        get("/breweries", breweries);
+//        get("userdash", userdash);
+//        get("ownerdash", ownerdash);
+
     }
 
     static int getHerokuAssignedPort() {
@@ -109,26 +117,29 @@ public class tapt_backend {
         }
     };
 
-    private static Route users = new Route() {
+    private static Route usersRegister = new Route() {
         public Object handle(Request request, Response response) throws Exception {
 
             String string = request.body();
             String[] parts = string.split("&");
-            String bigName = parts[0];
-            String bigEmail = parts[1];
-            String bigPassword = parts[2];
+            String name = parts[0];
+            String email = parts[1];
+            String password = parts[2];
 
-            String name = bigName.replace("name=", "");
-            String email = bigEmail.replace("email=", "");
-            String password = bigPassword.replace("password=", "");
+            name = name.replace("name=", "");
+            email = email.replace("email=", "");
+            password = password.replace("password=", "");
             password = BCrypt.hashpw(password, BCrypt.gensalt(10));
+
+            System.out.println(email);
+            System.out.println(name);
+            System.out.println(password);
 
             Connection connection = cpds.getConnection();
 
             String query = "SELECT email FROM users WHERE email = ?;";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, email);
-            System.out.println(preparedStatement);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             JSONObject object = new JSONObject();
@@ -161,6 +172,63 @@ public class tapt_backend {
 
         }
     };
+
+    private static Route ownerRegister = new Route() {
+        public Object handle(Request request, Response response) throws Exception {
+
+            String string = request.body();
+            String[] parts = string.split("&");
+            String email = parts[0];
+            String first_name = parts[1];
+            String last_name = parts[2];
+            String phone_number = parts[3];
+            String password = parts[4];
+
+
+
+            password = BCrypt.hashpw(password, BCrypt.gensalt(10));
+
+            Connection connection = cpds.getConnection();
+
+            String query = "SELECT email FROM owners WHERE email = ?;";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, email);
+            System.out.println(preparedStatement);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            JSONObject object = new JSONObject();
+
+            if (resultSet.next()) {
+                object.put("status", 409);
+                object.put("message", "User already exists");
+                response.status(409);
+                response.type("application/json");
+            } else {
+                query = "INSERT INTO owners (email, first_name, last_name, phone_number, password) VALUES (?, ?, ?, ?, ?)";
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setString(1, email);
+                preparedStatement.setString(2, first_name);
+                preparedStatement.setString(3, last_name);
+                preparedStatement.setString(4, phone_number);
+                preparedStatement.setString(5, password);
+
+
+                System.out.println(preparedStatement);
+
+                preparedStatement.execute();
+                object.put("status", 201);
+                object.put("message", "Owner created");
+//                object.put("token", createJWT(email));
+                response.status(201);
+                response.type("application/json");
+            }
+            resultSet.close();
+            preparedStatement.close();
+            connection.close();
+            return object.toString();
+        }
+    };
+
 
     private static Route beertypesId = new Route() {
         public Object handle(Request request, Response response) throws Exception {
