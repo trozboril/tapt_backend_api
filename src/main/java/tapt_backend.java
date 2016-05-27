@@ -31,13 +31,14 @@ public class tapt_backend {
     public static void main (String [] args) {
         cpds = new ComboPooledDataSource();
         String databaseUrl = System.getenv("HEROKU_POSTGRESQL_AQUA_URL");
+        String herokuAuth = System.getenv("HEROKU_AUTH");
         if (databaseUrl == null) {
             databaseUrl = "postgresql://localhost/tapt_api";
         } else {
             databaseUrl = databaseUrl.replaceAll("postgres", "postgresql");
         }
         System.out.println(databaseUrl);
-        cpds.setJdbcUrl("jdbc:postgresql://ec2-23-23-199-72.compute-1.amazonaws.com:5432/dcp0qcse5pokul?user=yuvzyisevdvoan&password=SYJCWMboRrPG_BXM5Uu3GWeyHI&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+        cpds.setJdbcUrl("jdbc:postgresql://ec2-23-23-199-72.compute-1.amazonaws.com:5432/dcp0qcse5pokul?"+herokuAuth+"&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
         port(getHerokuAssignedPort());
         enableCORS("*", "*", "*");
         post("/users", users);

@@ -13,6 +13,7 @@ The following files have been resolved:
    org.postgresql:postgresql:jar:9.4.1208.jre7:compile
    org.eclipse.jetty.websocket:websocket-servlet:jar:9.3.6.v20151106:compile
    com.sparkjava:spark-core:jar:2.5:compile
+   org.mindrot:jbcrypt:jar:0.3m:compile
    org.eclipse.jetty:jetty-security:jar:9.3.6.v20151106:compile
    org.eclipse.jetty:jetty-util:jar:9.3.6.v20151106:compile
    org.eclipse.jetty:jetty-http:jar:9.3.6.v20151106:compile
