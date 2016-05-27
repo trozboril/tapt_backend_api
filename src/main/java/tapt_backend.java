@@ -37,8 +37,7 @@ public class tapt_backend {
         } else {
             databaseUrl = databaseUrl.replaceAll("postgres", "postgresql");
         }
-        System.out.println(databaseUrl);
-        cpds.setJdbcUrl("jdbc:postgresql://ec2-23-23-199-72.compute-1.amazonaws.com:5432/dcp0qcse5pokul?"+herokuAuth+"&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+        cpds.setJdbcUrl(herokuAuth);
         port(getHerokuAssignedPort());
         enableCORS("*", "*", "*");
         post("/users", users);
