@@ -112,19 +112,19 @@ public class tapt_backend {
             ResultSet resultSet = preparedStatement.executeQuery();
             //looping through if resultSet has next
 //            String returner = "Not found :(";
-            JSONArray beerTypeArray = new JSONArray();
+            JSONArray brewery = new JSONArray();
             ResultSetMetaData rsmd = resultSet.getMetaData();
             while (resultSet.next()) {
                 JSONObject temp = new JSONObject();
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                     temp.put(rsmd.getColumnName(i), resultSet.getString(i));
                 }
-                beerTypeArray.put(temp);
+                brewery.put(temp);
             }
             resultSet.close();
             preparedStatement.close();
             connection.close();
-            return beerTypeArray.toString();
+            return brewery.toString();
         }
     };
 
