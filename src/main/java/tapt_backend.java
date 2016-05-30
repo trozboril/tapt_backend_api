@@ -1,6 +1,7 @@
 import static spark.Spark.*;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.sun.tools.doclets.formats.html.SourceToHTMLConverter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import spark.Request;
@@ -44,13 +45,23 @@ public class tapt_backend {
         port(getHerokuAssignedPort());
         enableCORS("*", "*", "*");
         post("/userRegister", usersRegister);
-//        post("/ownerRegister", ownerRegister);
+        post("/ownerRegister", ownerRegister);
         get("/", home);
         get("/beertypes", beertypes);
         get("/beertypes/:id", beertypesId);
 //        get("/breweries", breweries);
-//        get("userdash", userdash);
-//        get("ownerdash", ownerdash);
+//        get("/userDash", userDash);
+//        get("/ownerDash", ownerDash);
+//        post("/addBrewery", addBrewery);
+//        post("/updateBrewery", updateBrewery);
+//        post("/deleteBrewery", deleteBrewery);
+//        post("/addBeer", addBeer);
+//        post("/deleteBeer", deleteBeer);
+//        post("/takeBeerOffTap", takeBeerOffTap);
+//        post("/putBeerOnTap", putBeerOnTap);
+//        post("/saveBeer", saveBeer);
+//        post("/saveBrewery", saveBrewery);
+
 
     }
 
@@ -89,6 +100,31 @@ public class tapt_backend {
             preparedStatement.close();
             connection.close();
             return returner;
+        }
+    };
+
+    private static Route breweries = new Route() {
+        public Object handle(Request request, Response response) throws Exception {
+            Connection connection = cpds.getConnection();
+            String query = "SELECT * FROM brewery";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            //looping through if resultSet has next
+//            String returner = "Not found :(";
+            JSONArray beerTypeArray = new JSONArray();
+            ResultSetMetaData rsmd = resultSet.getMetaData();
+            while (resultSet.next()) {
+                JSONObject temp = new JSONObject();
+                for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                    temp.put(rsmd.getColumnName(i), resultSet.getString(i));
+                }
+                beerTypeArray.put(temp);
+            }
+            resultSet.close();
+            preparedStatement.close();
+            connection.close();
+            return beerTypeArray.toString();
         }
     };
 
@@ -176,6 +212,8 @@ public class tapt_backend {
     private static Route ownerRegister = new Route() {
         public Object handle(Request request, Response response) throws Exception {
 
+            System.out.println(request.body());
+
             String string = request.body();
             String[] parts = string.split("&");
             String email = parts[0];
@@ -184,9 +222,20 @@ public class tapt_backend {
             String phone_number = parts[3];
             String password = parts[4];
 
-
-
+            first_name = first_name.replace("first_name=", "");
+            System.out.println(first_name);
+            last_name = last_name.replace("last_name=", "");
+            email = email.replace("email=", "");
+            password = password.replace("password=", "");
+            phone_number = phone_number.replace("phone_number=", "");
             password = BCrypt.hashpw(password, BCrypt.gensalt(10));
+
+            System.out.println("here");
+            System.out.println(email);
+            System.out.println(first_name);
+            System.out.println(last_name);
+            System.out.println(phone_number);
+            System.out.println(password);
 
             Connection connection = cpds.getConnection();
 
