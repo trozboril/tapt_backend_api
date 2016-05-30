@@ -49,7 +49,7 @@ public class tapt_backend {
         get("/", home);
         get("/beertypes", beertypes);
         get("/beertypes/:id", beertypesId);
-//        get("/breweries", breweries);
+        get("/breweries", breweries);
 //        get("/userDash", userDash);
 //        get("/ownerDash", ownerDash);
 //        post("/addBrewery", addBrewery);
