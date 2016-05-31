@@ -12,13 +12,13 @@ import spark.Response;
 import spark.Route;
 import spark.Filter;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.sql.*;
 
 import static spark.Spark.get;
+import static spark.Spark.post;
 import static spark.Spark.port;
+
+import java.util.HashMap;
 
 /**
  * Created by tylerrozboril on 5/23/16.
@@ -41,6 +41,7 @@ public class tapt_backend {
         } else {
             databaseUrl = databaseUrl.replaceAll("postgres", "postgresql");
         }
+
         cpds.setJdbcUrl(herokuAuth);
         port(getHerokuAssignedPort());
         enableCORS("*", "*", "*");
@@ -63,9 +64,10 @@ public class tapt_backend {
 //        post("/saveBrewery", saveBrewery);
 
 
-    }
+    };
 
     static int getHerokuAssignedPort() {
+
         ProcessBuilder processBuilder = new ProcessBuilder();
         if (processBuilder.environment().get("PORT") != null) {
             return Integer.parseInt(processBuilder.environment().get("PORT"));
@@ -156,27 +158,21 @@ public class tapt_backend {
     private static Route usersRegister = new Route() {
         public Object handle(Request request, Response response) throws Exception {
 
-            String string = request.body();
-            String[] parts = string.split("&");
-            String name = parts[0];
-            String email = parts[1];
-            String password = parts[2];
-
-            name = name.replace("name=", "");
-            email = email.replace("email=", "");
-            password = password.replace("password=", "");
-            password = BCrypt.hashpw(password, BCrypt.gensalt(10));
-
-            System.out.println(email);
-            System.out.println(name);
-            System.out.println(password);
+            String password = BCrypt.hashpw(request.queryParams("password"), BCrypt.gensalt(10));
 
             Connection connection = cpds.getConnection();
 
             String query = "SELECT email FROM users WHERE email = ?;";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, email);
-            ResultSet resultSet = preparedStatement.executeQuery();
+            PreparedStatement preparedStatement;
+            ResultSet resultSet;
+            try {
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setString(1, request.queryParams("email"));
+                resultSet = preparedStatement.executeQuery();
+            } catch (SQLException e) {
+                return e;
+            }
+
 
             JSONObject object = new JSONObject();
 
@@ -185,16 +181,19 @@ public class tapt_backend {
                 object.put("message", "User already exists");
                 response.status(409);
                 response.type("application/json");
+                return object;
             } else {
-                query = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-                preparedStatement = connection.prepareStatement(query);
-                preparedStatement.setString(1, name);
-                preparedStatement.setString(2, email);
-                preparedStatement.setString(3, password);
+                query = "INSERT INTO users (name, email, password) VALUES (?, ?, ?);";
 
-                System.out.println(preparedStatement);
-
-                preparedStatement.execute();
+                try {
+                    preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setString(1, request.queryParams("name"));
+                    preparedStatement.setString(2, request.queryParams("email"));
+                    preparedStatement.setString(3, password);
+                    preparedStatement.execute();
+                } catch(SQLException e) {
+                    return e;
+                }
                 object.put("status", 201);
                 object.put("message", "User created");
 //                object.put("token", createJWT(email));
@@ -214,28 +213,13 @@ public class tapt_backend {
 
             System.out.println(request.body());
 
-            String string = request.body();
-            String[] parts = string.split("&");
-            String email = parts[0];
-            String first_name = parts[1];
-            String last_name = parts[2];
-            String phone_number = parts[3];
-            String password = parts[4];
+            String email = request.queryParams("email");
+            String first_name = request.queryParams("first_name");
+            String last_name = request.queryParams("last_name");
+            String phone_number = request.queryParams("phone_number");
+            String password = request.queryParams("password");
 
-            first_name = first_name.replace("first_name=", "");
-            System.out.println(first_name);
-            last_name = last_name.replace("last_name=", "");
-            email = email.replace("email=", "");
-            password = password.replace("password=", "");
-            phone_number = phone_number.replace("phone_number=", "");
             password = BCrypt.hashpw(password, BCrypt.gensalt(10));
-
-            System.out.println("here");
-            System.out.println(email);
-            System.out.println(first_name);
-            System.out.println(last_name);
-            System.out.println(phone_number);
-            System.out.println(password);
 
             Connection connection = cpds.getConnection();
 
@@ -303,6 +287,15 @@ public class tapt_backend {
             return oneBeer;
         }
     };
-}
 
+
+    private static Route addBrewery = new Route() {
+        public Object handle(Request request, Response response) throws Exception {
+
+            String string = request.body();
+            return string;
+        }
+    };
+
+};
 
