@@ -51,7 +51,7 @@ public class tapt_backend {
         get("/beertypes", beertypes);
         get("/beertypes/:id", beertypesId);
         get("/breweries", breweries);
-        post("/login", login);
+        post("/login", userLogin);
 //        get("/userDash", userDash);
 //        get("/ownerDash", ownerDash);
 //        post("/addBrewery", addBrewery);
@@ -159,7 +159,6 @@ public class tapt_backend {
     private static Route usersRegister = new Route() {
         public Object handle(Request request, Response response) throws Exception {
 
-            System.out.println(request.body());
             String password = BCrypt.hashpw(request.queryParams("password"), BCrypt.gensalt(10));
 
             Connection connection = cpds.getConnection();
@@ -264,54 +263,41 @@ public class tapt_backend {
         }
     };
 
-    private static Route login = new Route() {
-        @Override
+    private static Route userLogin = new Route() {
         public Object handle(Request request, Response response) throws Exception {
-            String password = BCrypt.hashpw(request.queryParams("password"), BCrypt.gensalt(10));
-
+            JSONObject userInfo = new JSONObject(request.body());
+            String email = userInfo.getString("email");
+            String password = userInfo.getString("password");
             Connection connection = cpds.getConnection();
-
-            String query = "SELECT email FROM users WHERE email = ?;";
-            PreparedStatement preparedStatement;
-            ResultSet resultSet;
-            try {
-                preparedStatement = connection.prepareStatement(query);
-                preparedStatement.setString(1, request.queryParams("email"));
-                resultSet = preparedStatement.executeQuery();
-            } catch (SQLException e) {
-                return e;
-            }
-
-
+            String query = "select email, password from users where email = ?;";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, email);
+            ResultSet resultSet = preparedStatement.executeQuery();
             JSONObject object = new JSONObject();
-
-            if (resultSet.next()) {
-                object.put("status", 409);
-                object.put("message", "User already exists");
-                response.status(409);
-                response.type("application/json");
-                return object;
+            if (!resultSet.next()) {
+                object.put("status", 401);
+                object.put("message", "Wrong email or password");
+                response.status(401);
             } else {
-                query = "INSERT INTO users (name, email, password) VALUES (?, ?, ?);";
-
-                try {
-                    preparedStatement = connection.prepareStatement(query);
-                    preparedStatement.setString(1, request.queryParams("name"));
-                    preparedStatement.setString(2, request.queryParams("email"));
-                    preparedStatement.setString(3, password);
-                    preparedStatement.execute();
-                } catch(SQLException e) {
-                    return e;
+                String hashedPassword = resultSet.getString("password");
+                if (!BCrypt.checkpw(password, hashedPassword)) {
+                    object.put("status", 401);
+                    object.put("message", "Wrong email or password");
+                    response.status(401);
+                } else {
+                    object.put("status", 200);
+                    object.put("message", "User found and password matches");
+                    JSONObject tokenize = new JSONObject();
+                    tokenize.put("email", email);
+                    tokenize.put("isTeacher", resultSet.getBoolean("is_teacher"));
+                    object.put("tokenize", tokenize);
+                    response.status(200);
                 }
-                object.put("status", 201);
-                object.put("message", "User created");
-//                object.put("token", createJWT(email));
-                response.status(201);
-                response.type("application/json");
             }
             resultSet.close();
             preparedStatement.close();
             connection.close();
+            response.type("application/json");
             return object.toString();
         }
     };
